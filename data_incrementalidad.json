@@ -295,8 +295,9 @@
         "Lift %": 18.4
       }
     ],
-    "psm_att_pct": 26.2,
-    "psm_att_abs": 1423231,
-    "psm_n_matched": 863
+    "psm_att_pct": 8.3,
+    "psm_att_abs": 36746,
+    "psm_n_matched": 863,
+    "psm_metodo": "suma_ponderada_retail"
   }
 }
