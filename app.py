@@ -15,7 +15,7 @@ st.set_page_config(page_title="Loyalty Intelligence", page_icon="🎯", layout="
 
 @st.cache_data(ttl=3600, show_spinner="Cargando datos...")
 def load_data():
-    scored = pd.read_parquet('data_scored.parquet')
+    scored = pd.read_csv('data_scored.csv.gz', compression='gzip')
     temporal = pd.read_csv('data_temporal.csv')
     funnel_evo = pd.read_csv('data_funnel_evo.csv')
 
