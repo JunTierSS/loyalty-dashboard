@@ -54,7 +54,10 @@
         "Gasto total Pt": 39195187,
         "Lift %": 41.0
       }
-    ]
+    ],
+    "psm_att_pct": 3.6,
+    "psm_att_abs": 12464,
+    "psm_n_matched": 648
   },
   "SODIMAC": {
     "lift_pct": 36.8,
@@ -111,7 +114,10 @@
         "Gasto total Pt": 84928907,
         "Lift %": 42.3
       }
-    ]
+    ],
+    "psm_att_pct": 19.0,
+    "psm_att_abs": 79880,
+    "psm_n_matched": 603
   },
   "TOTTUS": {
     "lift_pct": 23.5,
@@ -168,7 +174,10 @@
         "Gasto total Pt": 40731198,
         "Lift %": 34.0
       }
-    ]
+    ],
+    "psm_att_pct": 7.6,
+    "psm_att_abs": 26262,
+    "psm_n_matched": 470
   },
   "FCOM": {
     "lift_pct": 28.6,
@@ -225,7 +234,10 @@
         "Gasto total Pt": 29942285,
         "Lift %": 25.8
       }
-    ]
+    ],
+    "psm_att_pct": 3.6,
+    "psm_att_abs": 25275,
+    "psm_n_matched": 466
   },
   "TOTAL": {
     "lift_pct": 39.3,
@@ -282,6 +294,9 @@
         "Gasto total Pt": 837035695,
         "Lift %": 18.4
       }
-    ]
+    ],
+    "psm_att_pct": 26.2,
+    "psm_att_abs": 1423231,
+    "psm_n_matched": 863
   }
 }

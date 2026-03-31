@@ -429,17 +429,49 @@ elif V=="⚡ Incrementalidad":
 
     if gl_rows:
         gl=pd.DataFrame(gl_rows)
-        c1,c2,c3=st.columns(3)
-        c1.metric("Lift GitLab (TOTAL)",f"+{total_lift:.1f}%")
-        c2.metric("N Canjeadores",f"{incr.get('TOTAL',{}).get('n_canjeadores',0):,}")
-        c3.metric("N Potenciales",f"{incr.get('TOTAL',{}).get('n_potenciales',0):,}")
+        # Add PSM ATT column
+        gl['PSM ATT %'] = gl['Retail'].map(lambda r: incr.get(r,{}).get('psm_att_pct',0))
+        total_psm = incr.get('TOTAL',{}).get('psm_att_pct',0)
+        sobreest = total_lift / total_psm if total_psm > 0 else 0
 
-        fig=px.bar(gl,x='Retail',y='Lift %',color='Lift %',color_continuous_scale='RdYlGn',
-                   title='Lift gasto % por retail (metodologia GitLab exacta)',
-                   text='Lift %')
-        fig.update_traces(texttemplate='%{text:+.1f}%', textposition='outside')
-        fig.update_layout(yaxis_title='Lift gasto %',xaxis_title='Retail',showlegend=False)
+        c1,c2,c3,c4=st.columns(4)
+        c1.metric("Lift GitLab (TOTAL)",f"+{total_lift:.1f}%")
+        c2.metric("ATT PSM causal (TOTAL)",f"+{total_psm:.1f}%")
+        c3.metric("Sobreestimacion",f"{sobreest:.1f}x")
+        c4.metric("N Matched",f"{incr.get('TOTAL',{}).get('psm_n_matched',0):,}")
+
+        st.markdown(f"""
+> **GitLab** reporta **+{total_lift:.1f}%** de lift, pero el **PSM causal** estima solo **+{total_psm:.1f}%**.
+> Sobreestimacion de **{sobreest:.1f}x** — la diferencia es autoseleccion (los canjeadores ya gastaban mas).
+        """)
+
+        # Bar chart: GitLab vs PSM
+        fig=go.Figure()
+        fig.add_trace(go.Bar(x=gl.Retail,y=gl['Lift %'],name='GitLab (reportado)',marker_color='lightgray',
+                             text=[f'+{v:.1f}%' for v in gl['Lift %']],textposition='outside'))
+        fig.add_trace(go.Bar(x=gl.Retail,y=gl['PSM ATT %'],name='PSM ATT (causal)',marker_color='steelblue',
+                             text=[f'+{v:.1f}%' for v in gl['PSM ATT %']],textposition='outside'))
+        fig.update_layout(barmode='group',title='Lift % por retail: GitLab vs PSM causal',
+                          yaxis_title='Lift gasto %',xaxis_title='Retail')
         st.plotly_chart(fig,use_container_width=True)
+
+        # Tabla resumen
+        st.subheader("Resumen por retail")
+        summary = gl[['Retail','Lift %','PSM ATT %','N Canj','N Pot']].copy()
+        summary.columns = ['Retail','GitLab Lift %','PSM ATT %','N Canjeadores','N Potenciales']
+        summary['Sobreest.'] = (summary['GitLab Lift %'] / summary['PSM ATT %'].replace(0,np.nan)).round(1)
+        st.dataframe(summary.style.format({
+            'GitLab Lift %':'{:+.1f}%','PSM ATT %':'{:+.1f}%',
+            'N Canjeadores':'{:,.0f}','N Potenciales':'{:,.0f}','Sobreest.':'{:.1f}x'
+        }),use_container_width=True)
+
+        st.markdown("""
+> **ATT (Average Treatment Effect on the Treated):** Efecto causal promedio del canje sobre los que canjearon.
+> Estimado via PSM: emparejar cada canjeador con un potencial *similar* (mismo propensity score) y comparar gasto POST.
+>
+> **CATE (Conditional Average Treatment Effect):** Efecto causal *individual* por cliente (ver uplift en distribucion abajo).
+> Estimado via T-Learner: 2 modelos separados (canjeadores y no canjeadores), CATE = prediccion_tratado - prediccion_control.
+        """)
 
     # Tablas detalladas por quintil
     st.subheader("📊 Tablas por quintil — metodologia GitLab exacta")
