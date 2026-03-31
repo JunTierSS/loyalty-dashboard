@@ -51,6 +51,22 @@ def load_data():
     if 'quintil_gasto' not in scored.columns and 'monetary_total' in scored.columns:
         scored['quintil_gasto'] = pd.qcut(scored.monetary_total.rank(method='first'), 5, labels=['Q1','Q2','Q3','Q4','Q5'])
 
+    # Renombrar tiers
+    tier_map = {'NORMAL':'Entrada','Normal':'Entrada','FAN':'Fan','Fan':'Fan','PREMIUM':'Premium','Premium':'Premium','ELITE':'Elite','Elite':'Elite'}
+    for df in [scored, snap]:
+        if 'tier' in df.columns:
+            df['tier'] = df['tier'].map(lambda x: tier_map.get(x, x))
+
+    # Renombrar funnel states
+    funnel_map = {
+        'INSCRITO':'Inscrito','PARTICIPANTE':'Participante',
+        'POSIBILIDAD_CANJE':'Posibilidad Canje','CANJEADOR':'Canjeador',
+        'RECURRENTE':'Recurrente','FUGA':'Fuga'
+    }
+    for df in [scored, snap]:
+        if 'funnel_state_at_t0' in df.columns:
+            df['funnel_state_at_t0'] = df['funnel_state_at_t0'].map(lambda x: funnel_map.get(x, x))
+
     return scored, snap
 
 scored, snap = load_data()
@@ -123,14 +139,14 @@ if vista == "📊 KPIs Ejecutivos":
         if 'tier' in df.columns:
             tier_df = df.groupby('tier').apply(lambda x: pd.Series({'N':len(x),'Tasa':(x.y>0).mean()*100,'y1':(x.y==1).mean()*100,'y2':(x.y==2).mean()*100})).reset_index()
             fig = px.bar(tier_df, x='tier', y=['y1','y2'], barmode='stack', labels={'value':'%','variable':'Target'})
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     with c2:
         st.subheader("Por Funnel")
         if 'funnel_state_at_t0' in df.columns:
             fn_df = df.groupby('funnel_state_at_t0').apply(lambda x: pd.Series({'N':len(x),'Tasa':(x.y>0).mean()*100})).reset_index().sort_values('Tasa',ascending=False)
             fig = px.bar(fn_df, x='funnel_state_at_t0', y='Tasa', color='Tasa', color_continuous_scale='RdYlGn')
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # Evolución temporal
     st.subheader("Evolución temporal")
@@ -140,7 +156,7 @@ if vista == "📊 KPIs Ejecutivos":
         evo.columns = ['t0','tasa']
         fig = px.line(evo, x='t0', y='tasa', markers=True)
         fig.update_layout(yaxis_title="Tasa canje %")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "🔄 Funnel Markov":
@@ -153,21 +169,21 @@ elif vista == "🔄 Funnel Markov":
         evo = snap_f.groupby(['t0','funnel_state_at_t0']).size().reset_index(name='n')
         fig = px.area(evo, x='t0', y='n', color='funnel_state_at_t0', category_orders={'funnel_state_at_t0':states})
         fig.update_layout(yaxis_title="Clientes", legend_title="Estado")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     c1,c2 = st.columns(2)
     with c1:
         st.subheader("Distribución actual")
         fn_dist = df.funnel_state_at_t0.value_counts()
         fig = px.pie(values=fn_dist.values, names=fn_dist.index, hole=0.4)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with c2:
         st.subheader("Tasa canje por estado")
         fn_rate = df.groupby('funnel_state_at_t0').apply(lambda x: (x.y>0).mean()*100).reset_index()
         fn_rate.columns = ['Estado','Tasa']
         fig = px.bar(fn_rate.sort_values('Tasa',ascending=False), x='Estado', y='Tasa')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "🧩 Segmentacion":
@@ -181,17 +197,17 @@ elif vista == "🧩 Segmentacion":
             'EV':x.expected_value.mean() if 'expected_value' in x.columns else 0,
             '% Alta':(x.prioridad=='Alta').mean()*100 if 'prioridad' in x.columns else 0,
         })).reset_index()
-        st.dataframe(cl_df.style.format({'N':'{:,.0f}','Tasa canje':'{:.1f}%','Propensity':'{:.3f}','Uplift':'${:+,.0f}','EV':'${:+,.0f}','% Alta':'{:.1f}%'}), use_container_width=True)
+        st.dataframe(cl_df.style.format({'N':'{:,.0f}','Tasa canje':'{:.1f}%','Propensity':'{:.3f}','Uplift':'${:+,.0f}','EV':'${:+,.0f}','% Alta':'{:.1f}%'}), width='stretch')
 
         c1,c2 = st.columns(2)
         with c1:
             fig = px.pie(cl_df, names='cluster_name', values='N', hole=0.4, title="Distribución")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         with c2:
             if 'prioridad' in df.columns:
                 cross = pd.crosstab(df.cluster_name, df.prioridad, normalize='index')*100
                 fig = px.bar(cross.reset_index(), x='cluster_name', y=[c for c in ['Alta','Media','Baja','No contactar'] if c in cross.columns], barmode='stack', title="Prioridad por cluster")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "⚡ Incrementalidad":
@@ -206,17 +222,17 @@ elif vista == "⚡ Incrementalidad":
         {'Retail':'FCOM','Canjeadores':4820,'Potenciales':2636,'Lift gasto %':19.3},
         {'Retail':'TOTAL','Canjeadores':8904,'Potenciales':10245,'Lift gasto %':35.3},
     ])
-    st.dataframe(gitlab_data.style.format({'Canjeadores':'{:,}','Potenciales':'{:,}','Lift gasto %':'{:+.1f}%'}), use_container_width=True)
+    st.dataframe(gitlab_data.style.format({'Canjeadores':'{:,}','Potenciales':'{:,}','Lift gasto %':'{:+.1f}%'}), width='stretch')
 
     fig = px.bar(gitlab_data[gitlab_data.Retail!='TOTAL'], x='Retail', y='Lift gasto %', color='Lift gasto %', color_continuous_scale='RdYlGn', title="Lift gasto % por retail")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     if 'uplift_x' in df.columns:
         st.subheader("Distribución de Uplift")
         fig2 = px.histogram(df, x='uplift_x', nbins=100, color='prioridad' if 'prioridad' in df.columns else None,
             color_discrete_map={'Alta':'green','Media':'orange','Baja':'gray','No contactar':'red'})
         fig2.update_layout(xaxis_title="Uplift (CLP)")
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "📈 Modelo & Lift":
@@ -236,7 +252,7 @@ elif vista == "📈 Modelo & Lift":
             fig.add_trace(go.Scatter(x=fpr,y=tpr,mode='lines',name=f'AUC={auc:.4f}'))
             fig.add_trace(go.Scatter(x=[0,1],y=[0,1],mode='lines',line=dict(dash='dash'),name='Random'))
             fig.update_layout(xaxis_title='FPR',yaxis_title='TPR',title='ROC Curve')
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         except: st.warning("No se pudo calcular AUC")
 
         # Lift por decil
@@ -257,7 +273,7 @@ elif vista == "📈 Modelo & Lift":
         fig2.update_layout(xaxis_title='Decil (10=top)',xaxis=dict(dtick=1))
         fig2.update_yaxes(title_text='Lift',secondary_y=False)
         fig2.update_yaxes(title_text='Cum Capture %',secondary_y=True)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
         st.dataframe(lift_df.style.format({'Rate':'{:.1f}%','Lift':'{:.2f}x','Cum':'{:.1f}%'}))
 
@@ -297,7 +313,7 @@ elif vista == "👤 Customer 360":
             if 'stock_points_at_t0' in hist.columns:
                 fig.add_trace(go.Scatter(x=hist.t0,y=hist.stock_points_at_t0,mode='lines+markers'),row=2,col=1)
             fig.update_layout(height=500,showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "📋 Aperturas":
@@ -311,19 +327,19 @@ elif vista == "📋 Aperturas":
             'Prop':x.propensity_score.mean() if 'propensity_score' in x.columns else 0,
             '%Alta':(x.prioridad=='Alta').mean()*100 if 'prioridad' in x.columns else 0,
         })).reset_index()
-        st.dataframe(q_df.style.format({'N':'{:,.0f}','Tasa':'{:.1f}%','Prop':'{:.3f}','%Alta':'{:.1f}%'}), use_container_width=True)
+        st.dataframe(q_df.style.format({'N':'{:,.0f}','Tasa':'{:.1f}%','Prop':'{:.3f}','%Alta':'{:.1f}%'}), width='stretch')
 
     # Cross: quintil × tier
     if 'quintil_gasto' in df.columns and 'tier' in df.columns:
         st.subheader("Tasa canje: Quintil × Tier")
         cross = df.groupby(['quintil_gasto','tier']).apply(lambda x: (x.y>0).mean()*100).unstack(fill_value=0)
-        st.dataframe(cross.style.format('{:.1f}%'), use_container_width=True)
+        st.dataframe(cross.style.format('{:.1f}%'), width='stretch')
 
     # Cross: cluster × funnel
     if 'cluster_name' in df.columns and 'funnel_state_at_t0' in df.columns:
         st.subheader("N clientes: Cluster × Funnel")
         cross2 = pd.crosstab(df.cluster_name, df.funnel_state_at_t0)
-        st.dataframe(cross2.style.format('{:,}'), use_container_width=True)
+        st.dataframe(cross2.style.format('{:,}'), width='stretch')
 
     # Por tipo cliente
     if 'tipo_cliente' in df.columns:
@@ -333,13 +349,13 @@ elif vista == "📋 Aperturas":
             'Prop':x.propensity_score.mean() if 'propensity_score' in x.columns else 0,
             'Gasto':x.monetary_total.mean() if 'monetary_total' in x.columns else 0,
         })).reset_index()
-        st.dataframe(tc_df.style.format({'N':'{:,.0f}','Tasa':'{:.1f}%','Prop':'{:.3f}','Gasto':'${:,.0f}'}), use_container_width=True)
+        st.dataframe(tc_df.style.format({'N':'{:,.0f}','Tasa':'{:.1f}%','Prop':'{:.3f}','Gasto':'${:,.0f}'}), width='stretch')
 
     # Prioridad × Quintil
     if 'prioridad' in df.columns and 'quintil_gasto' in df.columns:
         st.subheader("Prioridad × Quintil")
         cross3 = pd.crosstab(df.quintil_gasto, df.prioridad, normalize='index')*100
-        st.dataframe(cross3.style.format('{:.1f}%'), use_container_width=True)
+        st.dataframe(cross3.style.format('{:.1f}%'), width='stretch')
 
 # ══════════════════════════════════════════════════════════════
 elif vista == "💾 Exports":
