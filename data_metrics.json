@@ -1,7 +1,13 @@
 {
   "n_clientes": 5000,
-  "auc": 0.9254239029641149,
-  "tasa_canje_1m": 3.4012247071352504,
+  "auc": 0.9417047967753391,
+  "f1": 0.7581565471836138,
+  "precision": 0.6980064655172413,
+  "recall": 0.8296509766250401,
+  "accuracy": 0.8899760383386581,
+  "threshold": 0.7600000000000002,
+  "tasa_canje_1m": 21.099999999999998,
   "horizonte": "1 mes",
-  "modelo": "binario (canjea/no canjea)"
+  "modelo": "XGBoost binario calibrado",
+  "scale_pos_weight": 10
 }

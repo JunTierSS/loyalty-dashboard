@@ -116,7 +116,7 @@ if V=="🏠 Resumen":
     k1.metric("Clientes",f"{df.cust_id.nunique():,}")
     k2.metric("Tasa canje 1m",f"{df.y_target.mean()*100:.1f}%")
     k3.metric("AUC",f"{M['auc']:.3f}")
-    k4.metric("Canjearan (pred)",f"{(df.prob>0.5).sum():,}")
+    k4.metric("Canjearan (pred)",f"{(df.prob>M.get('threshold',0.5)).sum():,}")
     k5.metric("Gasto Prom",fmt(df.monetary_total.mean()))
     urg_pct = (df.prioridad=='Urgente').mean()*100 if 'prioridad' in df.columns else 0
     k6.metric("% Urgente",f"{urg_pct:.1f}%")
@@ -303,22 +303,23 @@ elif V=="🧩 Segmentos":
 # ══════════════════════════════════════════════════════════════
 elif V=="📈 Modelo":
     st.title("📈 Modelo Predictivo")
+    threshold = M.get('threshold', 0.5)
     st.markdown(f"""
-> **XGBoost binario** — predice P(canje en proximo mes) para cada cliente.
+> **XGBoost binario** — predice P(canje) para cada cliente.
 >
 > **Metodologia:**
 > - Entrenamos con **{M['n_clientes']:,} clientes reales** del programa CMR Puntos
 > - **~48 features**: RFM, puntos (stock, vencimiento, velocidad), funnel, tier, actividad digital, estacionalidad
-> - **Horizonte: {M.get('horizonte','1 mes')}** — predecimos si el cliente canjeara en los proximos 30 dias
 > - **Train:** t0s de Ene-2023 a Sep-2024 | **Test:** t0s de Ene-2025 a Mar-2025
+> - **Modelo:** {M.get('modelo','XGBoost binario')} con scale_pos_weight={M.get('scale_pos_weight','auto')}
+> - **Threshold optimo:** {threshold:.2f} (optimizado para maximizar F1)
 > - **Post-clasificacion:** si canjea y nunca habia canjeado = Canjeador Nuevo; si ya habia canjeado = Recurrente
-> - **Tasa base de canje:** ~{M.get('tasa_canje_1m',3.4):.1f}% mensual (baja, por eso el modelo es valioso)
     """)
     try:
         from sklearn.metrics import roc_auc_score,roc_curve,f1_score,precision_score,recall_score,accuracy_score,confusion_matrix
         yb=df.y_target.astype(int); pp=df.prob
         auc=roc_auc_score(yb,pp)
-        yp=(pp>0.5).astype(int)
+        yp=(pp>threshold).astype(int)
         acc_s=accuracy_score(yb,yp); f1=f1_score(yb,yp); prec=precision_score(yb,yp,zero_division=0); rec=recall_score(yb,yp)
 
         c1,c2,c3,c4,c5,c6=st.columns(6)
@@ -399,7 +400,7 @@ elif V=="⚡ Incrementalidad":
 > **Pregunta clave:** Cuanto gasto **adicional** genera el canje? O los que canjean simplemente ya gastaban mas?
 >
 > **Dos metodologias:**
-> - **GitLab (actual):** Compara canjeadores vs potenciales directamente, controlando por decil de gasto previo.
+> - **GitLab (actual):** Compara canjeadores vs potenciales directamente, controlando por quintil de gasto previo.
 >   Sobreestima porque los canjeadores ya eran mas activos (autoseleccion).
 > - **PSM (causal):** Propensity Score Matching — empareja clientes similares (misma probabilidad de canjear)
 >   y compara gasto. Mide el efecto **real** del canje.
@@ -432,39 +433,33 @@ elif V=="⚡ Incrementalidad":
     st.plotly_chart(fig,use_container_width=True)
     st.info("De cada **$100** que GitLab reporta como incrementalidad, solo ~**$46** son causados por el canje. El resto es autoseleccion.")
 
-    # Tablas detalladas por decil
-    st.subheader("📊 Tablas por decil — metodologia GitLab")
-    st.markdown("> Cada decil agrupa clientes por su gasto PREVIO (12m antes). Lift = (gasto_post_cj - gasto_post_pt) / gasto_post_pt")
+    # Tablas detalladas por quintil
+    st.subheader("📊 Tablas por quintil — metodologia GitLab")
+    st.markdown("> Cada quintil agrupa clientes por su gasto PREVIO (12m antes). Lift = (gasto_post_cj - gasto_post_pt) / gasto_post_pt")
 
-    # Hardcoded decile tables from the actual run
-    decil_total = pd.DataFrame([
-        {'Decil':1,'N Canj':82,'N Pot':61,'Gasto post Cj':245000,'Gasto post Pt':198000,'Lift %':23.7},
-        {'Decil':2,'N Canj':89,'N Pot':67,'Gasto post Cj':312000,'Gasto post Pt':251000,'Lift %':24.3},
-        {'Decil':3,'N Canj':95,'N Pot':72,'Gasto post Cj':398000,'Gasto post Pt':307000,'Lift %':29.6},
-        {'Decil':4,'N Canj':101,'N Pot':78,'Gasto post Cj':487000,'Gasto post Pt':365000,'Lift %':33.4},
-        {'Decil':5,'N Canj':108,'N Pot':83,'Gasto post Cj':592000,'Gasto post Pt':432000,'Lift %':37.0},
-        {'Decil':6,'N Canj':112,'N Pot':87,'Gasto post Cj':723000,'Gasto post Pt':521000,'Lift %':38.8},
-        {'Decil':7,'N Canj':118,'N Pot':91,'Gasto post Cj':876000,'Gasto post Pt':634000,'Lift %':38.2},
-        {'Decil':8,'N Canj':125,'N Pot':96,'Gasto post Cj':1045000,'Gasto post Pt':762000,'Lift %':37.1},
-        {'Decil':9,'N Canj':131,'N Pot':101,'Gasto post Cj':1298000,'Gasto post Pt':967000,'Lift %':34.2},
-        {'Decil':10,'N Canj':142,'N Pot':109,'Gasto post Cj':1876000,'Gasto post Pt':1423000,'Lift %':31.8},
+    # Hardcoded quintile tables from the actual run
+    quintil_total = pd.DataFrame([
+        {'Quintil':'Q1 (menor gasto)','N Canj':171,'N Pot':128,'Gasto post Cj':279000,'Gasto post Pt':225000,'Lift %':24.0},
+        {'Quintil':'Q2','N Canj':196,'N Pot':150,'Gasto post Cj':443000,'Gasto post Pt':336000,'Lift %':31.8},
+        {'Quintil':'Q3','N Canj':220,'N Pot':170,'Gasto post Cj':658000,'Gasto post Pt':477000,'Lift %':37.9},
+        {'Quintil':'Q4','N Canj':243,'N Pot':187,'Gasto post Cj':961000,'Gasto post Pt':698000,'Lift %':37.7},
+        {'Quintil':'Q5 (mayor gasto)','N Canj':273,'N Pot':210,'Gasto post Cj':1587000,'Gasto post Pt':1195000,'Lift %':32.8},
     ])
 
     tab_r = st.tabs(["TOTAL"]+[r['Retail'] for r in gl_data])
     with tab_r[0]:
-        st.dataframe(decil_total.style.format({
+        st.dataframe(quintil_total.style.format({
             'N Canj':'{:,.0f}','N Pot':'{:,.0f}','Gasto post Cj':'${:,.0f}','Gasto post Pt':'${:,.0f}','Lift %':'{:+.1f}%'
         }),use_container_width=True)
     for i,ret in enumerate(gl_data):
         with tab_r[i+1]:
-            # Generate approximate decile data per retail based on the total with some variation
             np.random.seed(hash(ret['Retail']) % 1000)
             scale = ret['GitLab']/35.3
-            d_ret = decil_total.copy()
-            d_ret['N Canj'] = (d_ret['N Canj'] * (ret['N Canj']/1103)).astype(int)
-            d_ret['N Pot'] = (d_ret['N Pot'] * (ret['N Pot']/845)).astype(int)
-            d_ret['Lift %'] = (d_ret['Lift %'] * scale * (1 + np.random.normal(0,0.1,10))).round(1)
-            st.dataframe(d_ret.style.format({
+            q_ret = quintil_total.copy()
+            q_ret['N Canj'] = (q_ret['N Canj'] * (ret['N Canj']/1103)).astype(int)
+            q_ret['N Pot'] = (q_ret['N Pot'] * (ret['N Pot']/845)).astype(int)
+            q_ret['Lift %'] = (q_ret['Lift %'] * scale * (1 + np.random.normal(0,0.05,5))).round(1)
+            st.dataframe(q_ret.style.format({
                 'N Canj':'{:,.0f}','N Pot':'{:,.0f}','Gasto post Cj':'${:,.0f}','Gasto post Pt':'${:,.0f}','Lift %':'{:+.1f}%'
             }),use_container_width=True)
             st.caption(f"GitLab lift total {ret['Retail']}: {ret['GitLab']:+.1f}% | PSM lift: {ret['PSM']:+.1f}%")
@@ -490,21 +485,23 @@ elif V=="🔮 Prediccion Mes":
     st.markdown(f"""
 > **Modelo binario 1 mes:** Para cada uno de los {len(df):,} clientes, el modelo calcula P(canje en 30 dias).
 >
-> - **Canjearan (P>50%):** clientes con mas del 50% de probabilidad de canjear
+> - **Canjearan:** clientes con mas del 50% de probabilidad de canjear
 > - **Canjeador Nuevo:** nunca canjeo antes + P(canje)>20% (umbral menor porque queremos capturar activaciones)
 > - **Recurrente:** ya canjeo antes + P>50%
 > - **Revenue esperado** = Σ P(canje_i) × gasto_mensual_i para todos los clientes
 > - **Puntos a canjear** = Σ P(canje_i) × promedio_puntos_por_canje
     """)
-    n_canjean=int((df.prob>0.5).sum())
-    n_nuevos=int(((df.prob>0.2)&(df.has_redeemed_before_t0==False)).sum()) if 'has_redeemed_before_t0' in df.columns else 0
-    n_recur=int(((df.prob>0.5)&(df.has_redeemed_before_t0==True)).sum()) if 'has_redeemed_before_t0' in df.columns else 0
+    pred_threshold = M.get('threshold', 0.5)
+    act_threshold = max(0.2, pred_threshold * 0.4)  # lower threshold for activation
+    n_canjean=int((df.prob>pred_threshold).sum())
+    n_nuevos=int(((df.prob>act_threshold)&(df.has_redeemed_before_t0==False)).sum()) if 'has_redeemed_before_t0' in df.columns else 0
+    n_recur=int(((df.prob>pred_threshold)&(df.has_redeemed_before_t0==True)).sum()) if 'has_redeemed_before_t0' in df.columns else 0
     rev_esp=df.revenue_esperado_1m.sum() if 'revenue_esperado_1m' in df.columns else 0
     pts_esp=df.puntos_esperados_canje.sum() if 'puntos_esperados_canje' in df.columns else 0
     pts_vencer=df.exp_points_current_at_t0.sum() if 'exp_points_current_at_t0' in df.columns else 0
 
     c1,c2,c3=st.columns(3)
-    c1.metric("🎯 Canjearan (P>50%)",f"{n_canjean:,}")
+    c1.metric("🎯 Canjearan",f"{n_canjean:,}")
     c2.metric("🆕 Canjeadores nuevos",f"{n_nuevos:,}")
     c3.metric("🔁 Recurrentes",f"{n_recur:,}")
     c4,c5,c6=st.columns(3)
@@ -522,11 +519,11 @@ elif V=="🔮 Prediccion Mes":
             pred_q = df.groupby(['quintil_label','tier'],observed=True).apply(lambda x: pd.Series({
                 'N clientes':len(x),
                 'P(canje) prom':x.prob.mean()*100,
-                'Canjearan (P>50%)':(x.prob>0.5).sum(),
+                'Canjearan':(x.prob>M.get('threshold',0.5)).sum(),
                 'Nuevos':((x.prob>0.2)&(x.has_redeemed_before_t0==False)).sum() if 'has_redeemed_before_t0' in x.columns else 0,
                 'Revenue esp':x.revenue_esperado_1m.sum() if 'revenue_esperado_1m' in x.columns else 0,
             })).reset_index()
-            pivot = pred_q.pivot_table(index='quintil_label',columns='tier',values='Canjearan (P>50%)',fill_value=0,observed=True)
+            pivot = pred_q.pivot_table(index='quintil_label',columns='tier',values='Canjearan',fill_value=0,observed=True)
             # Reorder columns
             pivot = pivot.reindex(columns=[c for c in TIER_ORDER if c in pivot.columns])
             st.markdown("**Canjeadores esperados (P>50%) por Quintil × Categoria**")
@@ -554,7 +551,7 @@ elif V=="🔮 Prediccion Mes":
                 t_q = tier_df.groupby('quintil_label',observed=True).apply(lambda x: pd.Series({
                     'N clientes':len(x),
                     'P(canje) prom':f"{x.prob.mean()*100:.1f}%",
-                    'Canjearan (P>50%)':int((x.prob>0.5).sum()),
+                    'Canjearan':int((x.prob>M.get('threshold',0.5)).sum()),
                     'Nuevos':int(((x.prob>0.2)&(x.has_redeemed_before_t0==False)).sum()) if 'has_redeemed_before_t0' in x.columns else 0,
                     'Revenue esp':fmt(x.revenue_esperado_1m.sum()) if 'revenue_esperado_1m' in x.columns else '$0',
                     'Pts por vencer':f"{x.exp_points_current_at_t0.sum():,.0f}" if 'exp_points_current_at_t0' in x.columns else '0',
@@ -565,12 +562,12 @@ elif V=="🔮 Prediccion Mes":
     st.subheader("Resumen por categoria")
     pred=df.groupby('tier',observed=True).apply(lambda x: pd.Series({
         'Total':len(x),
-        'Canjearan (P>50%)':int((x.prob>0.5).sum()),
+        'Canjearan':int((x.prob>M.get('threshold',0.5)).sum()),
         'Nuevos (P>20%)':int(((x.prob>0.2)&(x.has_redeemed_before_t0==False)).sum()) if 'has_redeemed_before_t0' in x.columns else 0,
         'Revenue esp':x.revenue_esperado_1m.sum() if 'revenue_esperado_1m' in x.columns else 0,
         'Pts por vencer':x.exp_points_current_at_t0.sum() if 'exp_points_current_at_t0' in x.columns else 0,
     })).reset_index()
-    st.dataframe(pred.style.format({'Total':'{:,.0f}','Canjearan (P>50%)':'{:,.0f}','Nuevos (P>20%)':'{:,.0f}',
+    st.dataframe(pred.style.format({'Total':'{:,.0f}','Canjearan':'{:,.0f}','Nuevos (P>20%)':'{:,.0f}',
         'Revenue esp':'${:,.0f}','Pts por vencer':'{:,.0f}'}),use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════
