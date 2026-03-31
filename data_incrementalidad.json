@@ -1,0 +1,287 @@
+{
+  "FALABELLA": {
+    "lift_pct": 34.5,
+    "n_canjeadores": 663,
+    "n_potenciales": 575,
+    "quintiles": [
+      {
+        "Quintil": "Q1",
+        "N Canj": 114,
+        "N Pot": 134,
+        "Gasto prom Cj": 186645,
+        "Gasto prom Pt": 129187,
+        "Gasto total Cj": 21277614,
+        "Gasto total Pt": 17311138,
+        "Lift %": 44.5
+      },
+      {
+        "Quintil": "Q2",
+        "N Canj": 115,
+        "N Pot": 132,
+        "Gasto prom Cj": 211390,
+        "Gasto prom Pt": 159786,
+        "Gasto total Cj": 24309918,
+        "Gasto total Pt": 21091796,
+        "Lift %": 32.3
+      },
+      {
+        "Quintil": "Q3",
+        "N Canj": 133,
+        "N Pot": 115,
+        "Gasto prom Cj": 308781,
+        "Gasto prom Pt": 242339,
+        "Gasto total Cj": 41067980,
+        "Gasto total Pt": 27869005,
+        "Lift %": 27.4
+      },
+      {
+        "Quintil": "Q4",
+        "N Canj": 143,
+        "N Pot": 104,
+        "Gasto prom Cj": 364526,
+        "Gasto prom Pt": 292051,
+        "Gasto total Cj": 52127310,
+        "Gasto total Pt": 30373362,
+        "Lift %": 24.8
+      },
+      {
+        "Quintil": "Q5",
+        "N Canj": 158,
+        "N Pot": 90,
+        "Gasto prom Cj": 614211,
+        "Gasto prom Pt": 435502,
+        "Gasto total Cj": 97045357,
+        "Gasto total Pt": 39195187,
+        "Lift %": 41.0
+      }
+    ]
+  },
+  "SODIMAC": {
+    "lift_pct": 36.8,
+    "n_canjeadores": 626,
+    "n_potenciales": 556,
+    "quintiles": [
+      {
+        "Quintil": "Q1",
+        "N Canj": 116,
+        "N Pot": 121,
+        "Gasto prom Cj": 190092,
+        "Gasto prom Pt": 170751,
+        "Gasto total Cj": 22050752,
+        "Gasto total Pt": 20660940,
+        "Lift %": 11.3
+      },
+      {
+        "Quintil": "Q2",
+        "N Canj": 119,
+        "N Pot": 117,
+        "Gasto prom Cj": 276099,
+        "Gasto prom Pt": 253752,
+        "Gasto total Cj": 32855816,
+        "Gasto total Pt": 29688995,
+        "Lift %": 8.8
+      },
+      {
+        "Quintil": "Q3",
+        "N Canj": 146,
+        "N Pot": 90,
+        "Gasto prom Cj": 396400,
+        "Gasto prom Pt": 281866,
+        "Gasto total Cj": 57874508,
+        "Gasto total Pt": 25367960,
+        "Lift %": 40.6
+      },
+      {
+        "Quintil": "Q4",
+        "N Canj": 119,
+        "N Pot": 117,
+        "Gasto prom Cj": 560053,
+        "Gasto prom Pt": 387998,
+        "Gasto total Cj": 66646312,
+        "Gasto total Pt": 45395864,
+        "Lift %": 44.3
+      },
+      {
+        "Quintil": "Q5",
+        "N Canj": 126,
+        "N Pot": 111,
+        "Gasto prom Cj": 1088603,
+        "Gasto prom Pt": 765125,
+        "Gasto total Cj": 137164037,
+        "Gasto total Pt": 84928907,
+        "Lift %": 42.3
+      }
+    ]
+  },
+  "TOTTUS": {
+    "lift_pct": 23.5,
+    "n_canjeadores": 495,
+    "n_potenciales": 366,
+    "quintiles": [
+      {
+        "Quintil": "Q1",
+        "N Canj": 92,
+        "N Pot": 81,
+        "Gasto prom Cj": 145655,
+        "Gasto prom Pt": 154278,
+        "Gasto total Cj": 13400276,
+        "Gasto total Pt": 12496555,
+        "Lift %": -5.6
+      },
+      {
+        "Quintil": "Q2",
+        "N Canj": 95,
+        "N Pot": 77,
+        "Gasto prom Cj": 135834,
+        "Gasto prom Pt": 160123,
+        "Gasto total Cj": 12904272,
+        "Gasto total Pt": 12329500,
+        "Lift %": -15.2
+      },
+      {
+        "Quintil": "Q3",
+        "N Canj": 102,
+        "N Pot": 70,
+        "Gasto prom Cj": 263113,
+        "Gasto prom Pt": 236208,
+        "Gasto total Cj": 26837612,
+        "Gasto total Pt": 16534563,
+        "Lift %": 11.4
+      },
+      {
+        "Quintil": "Q4",
+        "N Canj": 91,
+        "N Pot": 81,
+        "Gasto prom Cj": 307438,
+        "Gasto prom Pt": 244645,
+        "Gasto total Cj": 27976882,
+        "Gasto total Pt": 19816250,
+        "Lift %": 25.7
+      },
+      {
+        "Quintil": "Q5",
+        "N Canj": 115,
+        "N Pot": 57,
+        "Gasto prom Cj": 957657,
+        "Gasto prom Pt": 714582,
+        "Gasto total Cj": 110130586,
+        "Gasto total Pt": 40731198,
+        "Lift %": 34.0
+      }
+    ]
+  },
+  "FCOM": {
+    "lift_pct": 28.6,
+    "n_canjeadores": 483,
+    "n_potenciales": 272,
+    "quintiles": [
+      {
+        "Quintil": "Q1",
+        "N Canj": 81,
+        "N Pot": 70,
+        "Gasto prom Cj": 450591,
+        "Gasto prom Pt": 304981,
+        "Gasto total Cj": 36497945,
+        "Gasto total Pt": 21348707,
+        "Lift %": 47.7
+      },
+      {
+        "Quintil": "Q2",
+        "N Canj": 86,
+        "N Pot": 65,
+        "Gasto prom Cj": 468805,
+        "Gasto prom Pt": 290764,
+        "Gasto total Cj": 40317280,
+        "Gasto total Pt": 18899682,
+        "Lift %": 61.2
+      },
+      {
+        "Quintil": "Q3",
+        "N Canj": 100,
+        "N Pot": 51,
+        "Gasto prom Cj": 568268,
+        "Gasto prom Pt": 593239,
+        "Gasto total Cj": 56826858,
+        "Gasto total Pt": 30255234,
+        "Lift %": -4.2
+      },
+      {
+        "Quintil": "Q4",
+        "N Canj": 92,
+        "N Pot": 59,
+        "Gasto prom Cj": 764588,
+        "Gasto prom Pt": 573937,
+        "Gasto total Cj": 70342099,
+        "Gasto total Pt": 33862288,
+        "Lift %": 33.2
+      },
+      {
+        "Quintil": "Q5",
+        "N Canj": 124,
+        "N Pot": 27,
+        "Gasto prom Cj": 1394817,
+        "Gasto prom Pt": 1108973,
+        "Gasto total Cj": 172957411,
+        "Gasto total Pt": 29942285,
+        "Lift %": 25.8
+      }
+    ]
+  },
+  "TOTAL": {
+    "lift_pct": 39.3,
+    "n_canjeadores": 876,
+    "n_potenciales": 1033,
+    "quintiles": [
+      {
+        "Quintil": "Q1",
+        "N Canj": 62,
+        "N Pot": 320,
+        "Gasto prom Cj": 2957691,
+        "Gasto prom Pt": 1342179,
+        "Gasto total Cj": 183376900,
+        "Gasto total Pt": 429497484,
+        "Lift %": 120.4
+      },
+      {
+        "Quintil": "Q2",
+        "N Canj": 98,
+        "N Pot": 284,
+        "Gasto prom Cj": 2953414,
+        "Gasto prom Pt": 1458685,
+        "Gasto total Cj": 289434573,
+        "Gasto total Pt": 414266711,
+        "Lift %": 102.5
+      },
+      {
+        "Quintil": "Q3",
+        "N Canj": 175,
+        "N Pot": 206,
+        "Gasto prom Cj": 3489540,
+        "Gasto prom Pt": 2281026,
+        "Gasto total Cj": 610669539,
+        "Gasto total Pt": 469891365,
+        "Lift %": 53.0
+      },
+      {
+        "Quintil": "Q4",
+        "N Canj": 242,
+        "N Pot": 140,
+        "Gasto prom Cj": 5933375,
+        "Gasto prom Pt": 3655983,
+        "Gasto total Cj": 1435876961,
+        "Gasto total Pt": 511837727,
+        "Lift %": 62.3
+      },
+      {
+        "Quintil": "Q5",
+        "N Canj": 299,
+        "N Pot": 83,
+        "Gasto prom Cj": 11936908,
+        "Gasto prom Pt": 10084767,
+        "Gasto total Cj": 3569135563,
+        "Gasto total Pt": 837035695,
+        "Lift %": 18.4
+      }
+    ]
+  }
+}

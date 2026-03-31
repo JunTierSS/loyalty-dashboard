@@ -26,6 +26,9 @@ def load():
     tmp=pd.read_csv('data_temporal.csv')
     fevo=pd.read_csv('data_funnel_evo.csv')
     met=json.load(open('data_metrics.json'))
+    try: incr=json.load(open('data_incrementalidad.json'))
+    except: incr={}
+    met['_incr']=incr
     str_cols=['cust_id','tier','gender','city','dominant_retailer','funnel_state_at_t0',
               'status','cluster_name','prioridad','canal','timing','objetivo','accion',
               'tipo_cliente','quintil_label','target_label','target_label_12m',
@@ -411,58 +414,61 @@ elif V=="⚡ Incrementalidad":
 > - POST: Mar-2024 a Mar-2025 (gasto posterior — este es el que se compara)
     """)
 
-    # Datos hardcodeados de la corrida real
-    gl_data = [
-        {'Retail':'FALABELLA','GitLab':28.1,'PSM':21.2,'N Canj':847,'N Pot':612},
-        {'Retail':'SODIMAC','GitLab':25.0,'PSM':3.9,'N Canj':523,'N Pot':401},
-        {'Retail':'TOTTUS','GitLab':37.0,'PSM':23.5,'N Canj':1102,'N Pot':834},
-        {'Retail':'FCOM','GitLab':19.3,'PSM':28.9,'N Canj':312,'N Pot':245},
-    ]
-    gl=pd.DataFrame(gl_data)
+    # Datos reales de la corrida con filtros exactos GitLab
+    incr = M.get('_incr', {})
+    retailers_incr = ['FALABELLA','SODIMAC','TOTTUS','FCOM']
+    gl_rows = []
+    for ret in retailers_incr:
+        if ret in incr:
+            gl_rows.append({'Retail':ret,'Lift %':incr[ret]['lift_pct'],
+                           'N Canj':incr[ret]['n_canjeadores'],'N Pot':incr[ret]['n_potenciales']})
+    if 'TOTAL' in incr:
+        total_lift = incr['TOTAL']['lift_pct']
+    else:
+        total_lift = 0
 
-    c1,c2,c3=st.columns(3)
-    c1.metric("Lift GitLab (TOTAL)","+35.3%")
-    c2.metric("Lift PSM (real)","+16.2%")
-    c3.metric("Sobreestimacion GitLab","2.2x")
+    if gl_rows:
+        gl=pd.DataFrame(gl_rows)
+        c1,c2,c3=st.columns(3)
+        c1.metric("Lift GitLab (TOTAL)",f"+{total_lift:.1f}%")
+        c2.metric("N Canjeadores",f"{incr.get('TOTAL',{}).get('n_canjeadores',0):,}")
+        c3.metric("N Potenciales",f"{incr.get('TOTAL',{}).get('n_potenciales',0):,}")
 
-    fig=go.Figure()
-    fig.add_trace(go.Bar(x=gl.Retail,y=gl.GitLab,name='GitLab (reportado)',marker_color='lightgray'))
-    fig.add_trace(go.Bar(x=gl.Retail,y=gl.PSM,name='PSM (causal real)',marker_color='steelblue'))
-    fig.update_layout(barmode='group',title='Lift % por retail: lo reportado vs la realidad',
-                      yaxis_title='Lift gasto %',xaxis_title='Retail')
-    st.plotly_chart(fig,use_container_width=True)
-    st.info("De cada **$100** que GitLab reporta como incrementalidad, solo ~**$46** son causados por el canje. El resto es autoseleccion.")
+        fig=px.bar(gl,x='Retail',y='Lift %',color='Lift %',color_continuous_scale='RdYlGn',
+                   title='Lift gasto % por retail (metodologia GitLab exacta)',
+                   text='Lift %')
+        fig.update_traces(texttemplate='%{text:+.1f}%', textposition='outside')
+        fig.update_layout(yaxis_title='Lift gasto %',xaxis_title='Retail',showlegend=False)
+        st.plotly_chart(fig,use_container_width=True)
 
     # Tablas detalladas por quintil
-    st.subheader("📊 Tablas por quintil — metodologia GitLab")
-    st.markdown("> Cada quintil agrupa clientes por su gasto PREVIO (12m antes). Lift = (gasto_post_cj - gasto_post_pt) / gasto_post_pt")
+    st.subheader("📊 Tablas por quintil — metodologia GitLab exacta")
+    st.markdown("""
+> **Filtros aplicados (identicos a produccion):**
+> 1. Solo Canjeadores y Potenciales (excluye Acumuladores)
+> 2. GASTO_PREV > 0 AND GASTO_POST > 0 (por retail)
+> 3. Excluir top 1% de gasto PRE
+> 4. Excluir top 1% de gasto POST
+> 5. Primer canje NO puede ser posterior al periodo SEL
+>
+> **Lift** = (Gasto prom Canjeador - Gasto prom Potencial) / Gasto prom Potencial
+    """)
 
-    # Hardcoded quintile tables from the actual run
-    quintil_total = pd.DataFrame([
-        {'Quintil':'Q1 (menor gasto)','N Canj':171,'N Pot':128,'Gasto post Cj':279000,'Gasto post Pt':225000,'Lift %':24.0},
-        {'Quintil':'Q2','N Canj':196,'N Pot':150,'Gasto post Cj':443000,'Gasto post Pt':336000,'Lift %':31.8},
-        {'Quintil':'Q3','N Canj':220,'N Pot':170,'Gasto post Cj':658000,'Gasto post Pt':477000,'Lift %':37.9},
-        {'Quintil':'Q4','N Canj':243,'N Pot':187,'Gasto post Cj':961000,'Gasto post Pt':698000,'Lift %':37.7},
-        {'Quintil':'Q5 (mayor gasto)','N Canj':273,'N Pot':210,'Gasto post Cj':1587000,'Gasto post Pt':1195000,'Lift %':32.8},
-    ])
-
-    tab_r = st.tabs(["TOTAL"]+[r['Retail'] for r in gl_data])
-    with tab_r[0]:
-        st.dataframe(quintil_total.style.format({
-            'N Canj':'{:,.0f}','N Pot':'{:,.0f}','Gasto post Cj':'${:,.0f}','Gasto post Pt':'${:,.0f}','Lift %':'{:+.1f}%'
-        }),use_container_width=True)
-    for i,ret in enumerate(gl_data):
-        with tab_r[i+1]:
-            np.random.seed(hash(ret['Retail']) % 1000)
-            scale = ret['GitLab']/35.3
-            q_ret = quintil_total.copy()
-            q_ret['N Canj'] = (q_ret['N Canj'] * (ret['N Canj']/1103)).astype(int)
-            q_ret['N Pot'] = (q_ret['N Pot'] * (ret['N Pot']/845)).astype(int)
-            q_ret['Lift %'] = (q_ret['Lift %'] * scale * (1 + np.random.normal(0,0.05,5))).round(1)
-            st.dataframe(q_ret.style.format({
-                'N Canj':'{:,.0f}','N Pot':'{:,.0f}','Gasto post Cj':'${:,.0f}','Gasto post Pt':'${:,.0f}','Lift %':'{:+.1f}%'
-            }),use_container_width=True)
-            st.caption(f"GitLab lift total {ret['Retail']}: {ret['GitLab']:+.1f}% | PSM lift: {ret['PSM']:+.1f}%")
+    tab_names = ["TOTAL"] + retailers_incr
+    tab_r = st.tabs(tab_names)
+    for idx, ret in enumerate(tab_names):
+        with tab_r[idx]:
+            if ret in incr and 'quintiles' in incr[ret]:
+                q_df = pd.DataFrame(incr[ret]['quintiles'])
+                st.dataframe(q_df.style.format({
+                    'N Canj':'{:,.0f}','N Pot':'{:,.0f}',
+                    'Gasto prom Cj':'${:,.0f}','Gasto prom Pt':'${:,.0f}',
+                    'Gasto total Cj':'${:,.0f}','Gasto total Pt':'${:,.0f}',
+                    'Lift %':'{:+.1f}%'
+                }),use_container_width=True)
+                st.caption(f"Lift total ponderado {ret}: **{incr[ret]['lift_pct']:+.1f}%** | CJ={incr[ret]['n_canjeadores']:,} PT={incr[ret]['n_potenciales']:,}")
+            else:
+                st.info(f"Sin datos para {ret}")
 
     # Uplift distribution
     if 'uplift_x' in df.columns:
@@ -689,7 +695,8 @@ elif V=="👤 Ficha Cliente":
         c6.metric("CLV",fmt(r.clv_estimado) if 'clv_estimado' in r.index else "-")
         c7.metric("Gasto 12m",fmt(r.monetary_total) if 'monetary_total' in r.index else "-")
         c8.metric("Puntos",f"{r.stock_points_at_t0:,.0f}" if 'stock_points_at_t0' in r.index else "-")
-        tipo='Canjeador Nuevo predicho' if r.prob>0.3 and r.get('has_redeemed_before_t0',False)==False else 'Recurrente predicho' if r.prob>0.5 else 'No canjeara'
+        _t=M.get('threshold',0.5)
+        tipo='Canjeador Nuevo predicho' if r.prob>_t*0.5 and r.get('has_redeemed_before_t0',False)==False else 'Recurrente predicho' if r.prob>_t else 'No canjeara'
         st.info(f"**Prediccion:** {tipo} | **RFM:** {r.get('rfm_segment','?')} | **Breakage:** {r.get('breakage',0)*100:.0f}%")
 
 # ══════════════════════════════════════════════════════════════
