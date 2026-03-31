@@ -1,1 +1,7 @@
-{"n_clientes": 5000, "auc": 0.9397303342284594, "tasa_canje": 20.786741214057507}
+{
+  "n_clientes": 5000,
+  "auc": 0.9254239029641149,
+  "tasa_canje_1m": 3.4012247071352504,
+  "horizonte": "1 mes",
+  "modelo": "binario (canjea/no canjea)"
+}
