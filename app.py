@@ -26,9 +26,11 @@ def load():
     tmp=pd.read_csv('data_temporal.csv')
     fevo=pd.read_csv('data_funnel_evo.csv')
     met=json.load(open('data_metrics.json'))
-    try: incr=json.load(open('data_incrementalidad.json'))
-    except: incr={}
-    met['_incr']=incr
+    import os
+    if os.path.exists('data_incrementalidad.json'):
+        met['_incr']=json.load(open('data_incrementalidad.json'))
+    else:
+        met['_incr']={}
     str_cols=['cust_id','tier','gender','city','dominant_retailer','funnel_state_at_t0',
               'status','cluster_name','prioridad','canal','timing','objetivo','accion',
               'tipo_cliente','quintil_label','target_label','target_label_12m',
@@ -416,6 +418,8 @@ elif V=="⚡ Incrementalidad":
 
     # Datos reales de la corrida con filtros exactos GitLab
     incr = M.get('_incr', {})
+    if not incr:
+        st.warning("data_incrementalidad.json no encontrado o vacio. Verifica que el archivo este en el repo.")
     retailers_incr = ['FALABELLA','SODIMAC','TOTTUS','FCOM']
     gl_rows = []
     for ret in retailers_incr:
