@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 st.set_page_config(page_title="Loyalty Intelligence", page_icon="🎯", layout="wide")
 
 # ── Load data ────────────────────────────────────────────────
-@st.cache_data
+@st.cache_data(ttl=3600, show_spinner="Cargando datos...")
 def load_data():
     def read_pq(path):
         t = pq.read_table(path)
@@ -239,11 +239,10 @@ elif vista == "📈 Modelo & Lift":
     st.title("📈 Modelo & Lift")
 
     if 'propensity_score' in df.columns and 'y' in df.columns:
-        from sklearn.metrics import roc_auc_score, roc_curve
-        y_bin = (df.y>0).astype(int)
-        prop = df.propensity_score.fillna(0)
-
         try:
+            from sklearn.metrics import roc_auc_score, roc_curve
+            y_bin = (df.y>0).astype(int)
+            prop = df.propensity_score.fillna(0)
             auc = roc_auc_score(y_bin, prop)
             st.metric("AUC", f"{auc:.4f}")
 
@@ -253,7 +252,8 @@ elif vista == "📈 Modelo & Lift":
             fig.add_trace(go.Scatter(x=[0,1],y=[0,1],mode='lines',line=dict(dash='dash'),name='Random'))
             fig.update_layout(xaxis_title='FPR',yaxis_title='TPR',title='ROC Curve')
             st.plotly_chart(fig, width='stretch')
-        except: st.warning("No se pudo calcular AUC")
+        except Exception as e:
+            st.warning(f"No se pudo calcular AUC: {e}")
 
         # Lift por decil
         st.subheader("Lift por decil")
